@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - 'logger-f-1'
     tags:
       - '*'
 
@@ -24,7 +23,7 @@ jobs:
         scala:
           - { name: "Scala 2", version: "2.12.18", binary-version: "2.12", java-version: "11", java-distribution: "temurin", report: "" }
           - { name: "Scala 2", version: "2.13.17", binary-version: "2.13", java-version: "11", java-distribution: "temurin", report: "" }
-          - { name: "Scala 3", version: "3.3.5",   binary-version: "3",    java-version: "11", java-distribution: "temurin", report: "" }
+          - { name: "Scala 3", version: "3.8.4",   binary-version: "3",    java-version: "11", java-distribution: "temurin", report: "" }
 
     steps:
       - uses: actions/checkout@v7
@@ -55,7 +54,7 @@ jobs:
             ++${{ matrix.scala.version }} \
             -v \
             clean \
-            test
+            +test
 
 
   gh-release:
@@ -88,7 +87,7 @@ jobs:
           sbt \
             -v \
             clean \
-            "+testCoreJVM/test; +testCoreJS/test; +testCoreWithCatsJVM/test; +testCoreWithCatsJS/test"
+            "+Test/compile"
 
   publish:
     needs: gh-release
