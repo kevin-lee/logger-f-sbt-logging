@@ -24,14 +24,12 @@ ThisBuild / scmInfo :=
 
 ThisBuild / licenses := props.licenses
 
-
 ThisBuild / scalafixConfig := (
   if (scalaVersion.value.startsWith("3"))
     ((ThisBuild / baseDirectory).value / ".scalafix-scala3.conf").some
   else
     ((ThisBuild / baseDirectory).value / ".scalafix-scala2.conf").some
 )
-
 
 lazy val loggerFSbtLogging = (project in file("."))
   .enablePlugins(DevOopsGitHubReleasePlugin)
@@ -51,8 +49,7 @@ lazy val loggerFSbtLogging = (project in file("."))
     sbtLogging,
   )
 
-
-lazy val sbtLogging       =
+lazy val sbtLogging =
   module(ProjectName("sbt-logging"))
     .settings(
       description := "Logger for F[_] - Logger with sbt logging",
@@ -81,7 +78,7 @@ lazy val sbtLogging       =
           )
       },
       libraryDependencies ++= List(
-        "io.kevinlee" %% "logger-f-core" % "2.10.0",
+        libs.loggerFCore
       ),
       libraryDependencies := libraryDependenciesRemoveScala3Incompatible(
         scalaVersion.value,
@@ -95,10 +92,10 @@ lazy val props =
     final val GitHubUsername = "kevin-lee"
     final val RepoName       = "logger-f-sbt-logging"
 
-    final val ParentProjectName       = "logger-f"
+    val ParentProjectName = "logger-f"
 
     val Scala3Versions = List("3.8.4")
-    val Scala2Versions = List("2.13.17", "2.12.18")
+    val Scala2Versions = List("2.13.18", "2.12.18")
 
 //    final val ProjectScalaVersion = Scala3Versions.head
     final val ProjectScalaVersion = Scala2Versions.head
@@ -118,6 +115,7 @@ lazy val props =
 
     final val IncludeTest = "compile->compile;test->test"
 
+    val LoggerFVersion = "2.11.0"
 
   }
 
@@ -125,6 +123,8 @@ lazy val libs =
   new {
 
     def sbtLoggingLib(sbtLoggingVersion: String) = "org.scala-sbt" %% "util-logging" % sbtLoggingVersion
+
+    lazy val loggerFCore = "io.kevinlee" %% "logger-f-core" % props.LoggerFVersion
 
   }
 
@@ -170,4 +170,3 @@ def projectCommonSettings(projectName: String, projectId: Option[ProjectName]): 
       /* } Coveralls */
     )
 }
-
