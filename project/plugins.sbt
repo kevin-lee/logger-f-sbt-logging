@@ -7,7 +7,9 @@ addSbtPlugin("ch.epfl.scala"   % "sbt-scalafix"    % "0.14.5")
 addSbtPlugin("org.scalameta"   % "sbt-scalafmt"    % "2.5.6")
 addSbtPlugin("org.scoverage"   % "sbt-scoverage"   % "2.4.4")
 
-val sbtDevOopsVersion = "3.3.2"
+addSbtPlugin("org.typelevel" % "sbt-tpolecat" % "0.5.7")
+
+val sbtDevOopsVersion = "3.5.1"
 addSbtPlugin("io.kevinlee" % "sbt-devoops-scala"     % sbtDevOopsVersion)
 addSbtPlugin("io.kevinlee" % "sbt-devoops-sbt-extra" % sbtDevOopsVersion)
 addSbtPlugin("io.kevinlee" % "sbt-devoops-github"    % sbtDevOopsVersion)
