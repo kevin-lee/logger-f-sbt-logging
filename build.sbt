@@ -31,10 +31,10 @@ ThisBuild / scalafixConfig := (
     ((ThisBuild / baseDirectory).value / ".scalafix-scala2.conf").some
 )
 
-lazy val loggerFSbtLogging = (project in file("."))
+lazy val loggerFSbtLoggingRoot = (project in file("."))
   .enablePlugins(DevOopsGitHubReleasePlugin)
   .settings(
-    name := prefixedProjectName("sbt-logging"),
+    name := prefixedProjectName("sbt-logging-root"),
     description := "Logger for F[_] - Logger with sbt logging",
     libraryDependencies := libraryDependenciesRemoveScala3Incompatible(
       scalaVersion.value,
