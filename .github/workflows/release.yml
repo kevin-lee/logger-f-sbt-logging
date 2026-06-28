@@ -10,22 +10,37 @@ on:
 env:
   GH_JAVA_DISTRIBUTION: "temurin"
   GH_SBT_OPTS: "-Xss64m -Xms1024m -XX:MaxMetaspaceSize=2G -Xmx8G -XX:MaxInlineLevel=18 -XX:+UnlockExperimentalVMOptions"
-  SCALA_VERSION_2_12: "2.12.18"
-  SCALA_VERSION_2_13: "2.13.18"
-  SCALA_VERSION_3: "3.8.4"
 
 jobs:
 
 
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      scala-matrix: ${{ steps.read.outputs.matrix }}
+      java11-versions: ${{ steps.read.outputs.java11 }}
+      java17-versions: ${{ steps.read.outputs.java17 }}
+      java-versions: ${{ steps.read.outputs.javas }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: read
+        run: |
+          echo "matrix=$(jq -c . .github/scala-versions.json)" >> "$GITHUB_OUTPUT"
+          echo "java11=$(jq -c '[.[] | select(."java-version" == "11") | .version]' .github/scala-versions.json)" >> "$GITHUB_OUTPUT"
+          echo "java17=$(jq -c '[.[] | select(."java-version" == "17") | .version]' .github/scala-versions.json)" >> "$GITHUB_OUTPUT"
+          {
+            echo "javas<<__GHA_EOF__"
+            jq -r '[.[]."java-version"] | unique | .[]' .github/scala-versions.json
+            echo "__GHA_EOF__"
+          } >> "$GITHUB_OUTPUT"
+
   build:
+    needs: setup
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        scala:
-          - { name: "Scala 2", version: "2.12.18", binary-version: "2.12", java-version: "11", java-distribution: "temurin", report: "" }
-          - { name: "Scala 2", version: "2.13.18", binary-version: "2.13", java-version: "11", java-distribution: "temurin", report: "" }
-          - { name: "Scala 3", version: "3.8.4",   binary-version: "3",    java-version: "17", java-distribution: "temurin", report: "" }
+        scala: ${{ fromJSON(needs.setup.outputs.scala-matrix) }}
 
     steps:
       - uses: actions/checkout@v7
@@ -56,7 +71,7 @@ jobs:
             ++${{ matrix.scala.version }} \
             -v \
             clean \
-            +test
+            test
 
 
   gh-release:
@@ -92,7 +107,7 @@ jobs:
             "+Test/compile"
 
   publish:
-    needs: gh-release
+    needs: [setup, gh-release]
 
     runs-on: ubuntu-latest
 
@@ -102,9 +117,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-java@v5
         with:
-          java-version: |
-            11
-            17
+          java-version: ${{ needs.setup.outputs.java-versions }}
           distribution: ${{ env.GH_JAVA_DISTRIBUTION }}
           cache: sbt
       - uses: sbt/setup-sbt@v1
@@ -120,6 +133,9 @@ jobs:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SBT_OPTS: ${{ env.GH_SBT_OPTS }}
+          JAVA11_VERSIONS_JSON: ${{ needs.setup.outputs.java11-versions }}
+          JAVA17_VERSIONS_JSON: ${{ needs.setup.outputs.java17-versions }}
+        shell: bash
         run: |
           echo "Run] sbt ci-release"
           export SOURCE_DATE_EPOCH=$(date +%s)
@@ -127,20 +143,26 @@ jobs:
           echo "SBT_OPTS=${SBT_OPTS}"
           echo "JAVA_HOME_11_X64=${JAVA_HOME_11_X64}"
           echo "JAVA_HOME_17_X64=${JAVA_HOME_17_X64}"
+          echo "JAVA11_VERSIONS_JSON=${JAVA11_VERSIONS_JSON}"
+          echo "JAVA17_VERSIONS_JSON=${JAVA17_VERSIONS_JSON}"
 
-          echo '[Java 11] publishSigned for Scala 2.13 and 2.12'
-          JAVA_HOME="$JAVA_HOME_11_X64" PATH="$JAVA_HOME_11_X64/bin:$PATH" \
-          sbt \
-            -v \
-            clean \
-            ++${SCALA_VERSION_2_13} sbtLogging/publishSigned \
-            ++${SCALA_VERSION_2_12} sbtLogging/publishSigned
+          echo '[Java 11] publishSigned for Scala 2.x'
+          export JAVA_HOME="$JAVA_HOME_11_X64"
+          export PATH="$JAVA_HOME_11_X64/bin:$PATH"
+          args=(clean)
+          while IFS= read -r v; do
+            args+=("++${v}" "sbtLogging/publishSigned")
+          done < <(jq -r '.[]' <<< "$JAVA11_VERSIONS_JSON")
+          sbt -v "${args[@]}"
 
-          echo '[Java 17] publishSigned for Scala 3.8.4'
-          JAVA_HOME="$JAVA_HOME_17_X64" PATH="$JAVA_HOME_17_X64/bin:$PATH" \
-          sbt \
-            -v \
-            ++${SCALA_VERSION_3} sbtLogging/publishSigned
+          echo '[Java 17] publishSigned for Scala 3'
+          export JAVA_HOME="$JAVA_HOME_17_X64"
+          export PATH="$JAVA_HOME_17_X64/bin:$PATH"
+          args=()
+          while IFS= read -r v; do
+            args+=("++${v}" "sbtLogging/publishSigned")
+          done < <(jq -r '.[]' <<< "$JAVA17_VERSIONS_JSON")
+          sbt -v "${args[@]}"
 
           echo '[Release] sonatypeBundleRelease (single bundle)'
           sbt \
@@ -150,7 +172,7 @@ jobs:
 
   publish-snapshot:
     if: startsWith(github.ref, 'refs/heads/')
-    needs: build
+    needs: [setup, build]
 
     runs-on: ubuntu-latest
 
@@ -160,9 +182,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-java@v5
         with:
-          java-version: |
-            11
-            17
+          java-version: ${{ needs.setup.outputs.java-versions }}
           distribution: ${{ env.GH_JAVA_DISTRIBUTION }}
           cache: sbt
       - uses: sbt/setup-sbt@v1
@@ -177,6 +197,9 @@ jobs:
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SBT_OPTS: ${{ env.GH_SBT_OPTS }}
+          JAVA11_VERSIONS_JSON: ${{ needs.setup.outputs.java11-versions }}
+          JAVA17_VERSIONS_JSON: ${{ needs.setup.outputs.java17-versions }}
+        shell: bash
         run: |
           echo "Run] sbt ci-release"
           export SOURCE_DATE_EPOCH=$(date +%s)
@@ -184,17 +207,23 @@ jobs:
           echo "SBT_OPTS=${SBT_OPTS}"
           echo "JAVA_HOME_11_X64=${JAVA_HOME_11_X64}"
           echo "JAVA_HOME_17_X64=${JAVA_HOME_17_X64}"
+          echo "JAVA11_VERSIONS_JSON=${JAVA11_VERSIONS_JSON}"
+          echo "JAVA17_VERSIONS_JSON=${JAVA17_VERSIONS_JSON}"
 
-          echo '[Java 11] publishSigned for Scala 2.13 and 2.12'
-          JAVA_HOME="$JAVA_HOME_11_X64" PATH="$JAVA_HOME_11_X64/bin:$PATH" \
-          sbt \
-            -v \
-            clean \
-            ++${SCALA_VERSION_2_13} sbtLogging/publishSigned \
-            ++${SCALA_VERSION_2_12} sbtLogging/publishSigned
+          echo '[Java 11] publishSigned for Scala 2.x'
+          export JAVA_HOME="$JAVA_HOME_11_X64"
+          export PATH="$JAVA_HOME_11_X64/bin:$PATH"
+          args=(clean)
+          while IFS= read -r v; do
+            args+=("++${v}" "sbtLogging/publishSigned")
+          done < <(jq -r '.[]' <<< "$JAVA11_VERSIONS_JSON")
+          sbt -v "${args[@]}"
 
-          echo '[Java 17] publishSigned for Scala 3.8.4'
-          JAVA_HOME="$JAVA_HOME_17_X64" PATH="$JAVA_HOME_17_X64/bin:$PATH" \
-          sbt \
-            -v \
-            ++${SCALA_VERSION_3} sbtLogging/publishSigned
+          echo '[Java 17] publishSigned for Scala 3'
+          export JAVA_HOME="$JAVA_HOME_17_X64"
+          export PATH="$JAVA_HOME_17_X64/bin:$PATH"
+          args=()
+          while IFS= read -r v; do
+            args+=("++${v}" "sbtLogging/publishSigned")
+          done < <(jq -r '.[]' <<< "$JAVA17_VERSIONS_JSON")
+          sbt -v "${args[@]}"

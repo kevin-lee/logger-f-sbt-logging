@@ -14,15 +14,22 @@ env:
 
 jobs:
 
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      scala-matrix: ${{ steps.read.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: read
+        run: echo "matrix=$(jq -c . .github/scala-versions.json)" >> "$GITHUB_OUTPUT"
+
   build:
+    needs: setup
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        scala:
-          - { name: "Scala 2", version: "2.12.18", binary-version: "2.12", java-version: "11", java-distribution: "temurin", report: "" }
-          - { name: "Scala 2", version: "2.13.18", binary-version: "2.13", java-version: "11", java-distribution: "temurin", report: "" }
-          - { name: "Scala 3", version: "3.8.4",   binary-version: "3",    java-version: "17", java-distribution: "temurin", report: "" }
+        scala: ${{ fromJSON(needs.setup.outputs.scala-matrix) }}
 
     steps:
       - uses: actions/checkout@v7
@@ -50,13 +57,13 @@ jobs:
           echo "SBT_OPTS=${SBT_OPTS}"
           java -version
           .github/workflows/sbt-build-all.sh ${{ matrix.scala.version }}
-          
+
           sbt \
             ++${{ matrix.scala.version }} \
             -v \
             clean \
-            +Test/compile \
-            +test
+            Test/compile \
+            test
 
       - name: "[PR] Build All for ${{ matrix.scala.name }}: ${{ matrix.scala.version }} - PR-#${{ github.event.pull_request.number }} - ${{ github.run_number }}"
         if: github.event_name == 'pull_request'
@@ -73,10 +80,10 @@ jobs:
           echo "PR #${PR_NUMBER}"
           java -version
           .github/workflows/sbt-build-all.sh ${{ matrix.scala.version }} ${{ matrix.scala.report }}
-          
+
           sbt \
             ++${{ matrix.scala.version }} \
             -v \
             clean \
-            +Test/compile \
-            +test
+            Test/compile \
+            test
