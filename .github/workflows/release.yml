@@ -167,10 +167,10 @@ jobs:
           done < <(jq -r '.[]' <<< "$JAVA17_VERSIONS_JSON")
           sbt -v "${args[@]}"
 
-          echo '[Release] sonatypeBundleRelease (single bundle)'
+          echo '[Release] sonaRelease (single bundle)'
           sbt \
             -v \
-            sonatypeBundleRelease
+            sonaRelease
 
 
   publish-snapshot:
