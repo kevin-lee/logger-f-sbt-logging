@@ -14,15 +14,22 @@ env:
 
 jobs:
 
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      scala-matrix: ${{ steps.read.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: read
+        run: echo "matrix=$(jq -c . .github/scala-versions.json)" >> "$GITHUB_OUTPUT"
+
   build-and-check:
+    needs: setup
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        scala:
-          - { name: "Scala 2", version: "2.12.18", binary-version: "2.12", java-version: "11", java-distribution: "temurin", report: "" }
-          - { name: "Scala 2", version: "2.13.18", binary-version: "2.13", java-version: "11", java-distribution: "temurin", report: "" }
-          - { name: "Scala 3", version: "3.8.4",   binary-version: "3",    java-version: "17", java-distribution: "temurin", report: "" }
+        scala: ${{ fromJSON(needs.setup.outputs.scala-matrix) }}
 
     steps:
       - uses: actions/checkout@v7
