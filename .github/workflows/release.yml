@@ -151,7 +151,7 @@ jobs:
           export PATH="$JAVA_HOME_11_X64/bin:$PATH"
           args=(clean)
           while IFS= read -r v; do
-            args+=("++${v}; sbtLogging/publishSigned")
+            args+=("++${v}; sbt-logging/publishSigned")
           done < <(jq -r '.[]' <<< "$JAVA11_VERSIONS_JSON")
           sbt -v "${args[@]}"
 
@@ -160,7 +160,7 @@ jobs:
           export PATH="$JAVA_HOME_17_X64/bin:$PATH"
           args=()
           while IFS= read -r v; do
-            args+=("++${v}; sbtLogging/publishSigned")
+            args+=("++${v}; sbt-logging/publishSigned")
           done < <(jq -r '.[]' <<< "$JAVA17_VERSIONS_JSON")
           sbt -v "${args[@]}"
 
@@ -215,7 +215,7 @@ jobs:
           export PATH="$JAVA_HOME_11_X64/bin:$PATH"
           args=(clean)
           while IFS= read -r v; do
-            args+=("++${v}; sbtLogging/publishSigned")
+            args+=("++${v}; sbt-logging/publishSigned")
           done < <(jq -r '.[]' <<< "$JAVA11_VERSIONS_JSON")
           sbt -v "${args[@]}"
 
@@ -224,6 +224,6 @@ jobs:
           export PATH="$JAVA_HOME_17_X64/bin:$PATH"
           args=()
           while IFS= read -r v; do
-            args+=("++${v}; sbtLogging/publishSigned")
+            args+=("++${v}; sbt-logging/publishSigned")
           done < <(jq -r '.[]' <<< "$JAVA17_VERSIONS_JSON")
           sbt -v "${args[@]}"
