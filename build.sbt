@@ -115,7 +115,7 @@ lazy val props =
 
     final val IncludeTest = "compile->compile;test->test"
 
-    val LoggerFVersion = "2.13.0"
+    val LoggerFVersion = "2.14.0"
 
   }
 
