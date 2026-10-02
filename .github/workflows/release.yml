@@ -49,7 +49,7 @@ jobs:
           java-version: ${{ matrix.scala.java-version }}
           distribution: ${{ matrix.scala.java-distribution }}
           cache: sbt
-      - uses: sbt/setup-sbt@v1.5.6
+      - uses: sbt/setup-sbt@v1.5.11
 
       - name: "[Push] Build All for ${{ matrix.scala.name }}: ${{ matrix.scala.version }} - ${{ github.run_number }}"
         env:
@@ -86,7 +86,7 @@ jobs:
           java-version: "17"
           distribution: ${{ env.GH_JAVA_DISTRIBUTION }}
           cache: sbt
-      - uses: sbt/setup-sbt@v1.5.6
+      - uses: sbt/setup-sbt@v1.5.11
 
       - name: sbt GitHub Release
         env:
@@ -120,7 +120,7 @@ jobs:
           java-version: ${{ needs.setup.outputs.java-versions }}
           distribution: ${{ env.GH_JAVA_DISTRIBUTION }}
           cache: sbt
-      - uses: sbt/setup-sbt@v1.5.6
+      - uses: sbt/setup-sbt@v1.5.11
 
       - uses: olafurpg/setup-gpg@v3
 
@@ -188,7 +188,7 @@ jobs:
           java-version: ${{ needs.setup.outputs.java-versions }}
           distribution: ${{ env.GH_JAVA_DISTRIBUTION }}
           cache: sbt
-      - uses: sbt/setup-sbt@v1.5.6
+      - uses: sbt/setup-sbt@v1.5.11
 
       - uses: olafurpg/setup-gpg@v3
 
