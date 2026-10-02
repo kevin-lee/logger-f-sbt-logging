@@ -38,7 +38,7 @@ jobs:
           java-version: ${{ matrix.scala.java-version }}
           distribution: ${{ matrix.scala.java-distribution }}
           cache: sbt
-      - uses: sbt/setup-sbt@v1.5.6
+      - uses: sbt/setup-sbt@v1.5.11
 
       - name: "[Push] Build All for ${{ matrix.scala.name }} v${{ matrix.scala.version }} - ${{ github.run_number }}"
         if: github.event_name == 'push'
